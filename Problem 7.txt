@@ -1,0 +1,115 @@
+Problem Statement: -7
+
+Unnamed PL/SQLcode block: Use of Control structure and Exception handling is
+mandatory.
+Suggested Problem statement:
+Consider Tables:
+1. Borrower (Roll_no, Name, Date_of_Issue, Name_of_Book, Status)
+2. Fine (Roll_no, Date, Amt)
+● Accept Roll_no and Name_of_Book from user.
+● Check the number of days (from Date_of_Issue).
+● If days are between 15 to 30 then fine amount will be Rs 5per day.
+● If no. of days>30, per day fine will be Rs 50 per day and for days less than 30, Rs. 5 per
+day.
+● After submitting the book, status will change from I to R.
+● If condition of fine is true, then details will be stored into fine table.
+
+Code & Commands :
+
+sudo mysql
+
+CREATE DATABASE LibraryDB;
+USE LibraryDB;
+
+
+-- Create Borrower table
+CREATE TABLE Borrower (
+    Roll_no INT PRIMARY KEY,
+    Name VARCHAR(100),
+    Date_of_Issue DATE,
+    Name_of_Book VARCHAR(100),
+    Status CHAR(1)  -- 'I' for Issued, 'R' for Returned
+);
+
+-- Create Fine table
+CREATE TABLE Fine (
+    Roll_no INT,
+    Date DATE,
+    Amt DECIMAL(10, 2),
+    PRIMARY KEY (Roll_no, Date),
+    FOREIGN KEY (Roll_no) REFERENCES Borrower(Roll_no)
+);
+
+
+-- Insert some sample records into Borrower table
+INSERT INTO Borrower (Roll_no, Name, Date_of_Issue, Name_of_Book, Status)
+VALUES 
+(101, 'John Doe', '2024-10-01', 'Learn MySQL', 'I'),
+(102, 'Jane Smith', '2024-09-15', 'Advanced SQL', 'I'),
+(103, 'Alice Brown', '2024-08-25', 'Database Systems', 'I');
+
+
+DELIMITER $$
+
+CREATE PROCEDURE Calculate_Fine(IN p_roll_no INT, IN p_name_of_book VARCHAR(100))
+BEGIN
+    -- Declare necessary variables
+    DECLARE v_date_of_issue DATE;
+    DECLARE v_current_date DATE;
+    DECLARE v_fine_amt DECIMAL(10, 2);
+    DECLARE v_days_diff INT;
+    DECLARE v_status CHAR(1);
+    
+    -- Get current date
+    SET v_current_date = CURDATE();
+    
+    -- Fetch the Date_of_Issue and Status from Borrower table
+    SELECT Date_of_Issue, Status INTO v_date_of_issue, v_status
+    FROM Borrower
+    WHERE Roll_no = p_roll_no AND Name_of_Book = p_name_of_book;
+    
+    -- Check if the book is issued (Status = 'I')
+    IF v_status != 'I' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Book has already been returned or does not exist';
+    END IF;
+    
+    -- Calculate the difference in days between the current date and Date_of_Issue
+    SET v_days_diff = DATEDIFF(v_current_date, v_date_of_issue);
+    
+    -- Calculate fine based on the number of days
+    IF v_days_diff BETWEEN 15 AND 30 THEN
+        SET v_fine_amt = v_days_diff * 5;  -- Rs 5 per day for 15-30 days
+    ELSEIF v_days_diff > 30 THEN
+        SET v_fine_amt = v_days_diff * 50;  -- Rs 50 per day for more than 30 days
+    ELSE
+        SET v_fine_amt = 0;  -- No fine for less than 15 days
+    END IF;
+    
+    -- If fine is greater than 0, insert into the Fine table
+    IF v_fine_amt > 0 THEN
+        INSERT INTO Fine (Roll_no, Date, Amt)
+        VALUES (p_roll_no, v_current_date, v_fine_amt);
+    END IF;
+    
+    -- Update the Status to 'R' (Returned)
+    UPDATE Borrower
+    SET Status = 'R'
+    WHERE Roll_no = p_roll_no AND Name_of_Book = p_name_of_book;
+    
+    -- Output a message
+    SELECT CONCAT('Book returned. Fine: Rs ', v_fine_amt) AS message;
+END$$
+
+DELIMITER ;
+
+
+-- Call the procedure for Roll_no = 101 and the book "Learn MySQL"
+CALL Calculate_Fine(101, 'Learn MySQL');
+
+
+-- Check Borrower table
+SELECT * FROM Borrower;
+
+-- Check Fine table
+SELECT * FROM Fine;
+

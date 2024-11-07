@@ -1,0 +1,71 @@
+Problem Statement: -4
+Create following collections and Perform Mongodb CRUD Operations.
+Teachers (Tname, dno, dname, experience, salary, date_of_joining )
+Students(Sname, roll_no, class)
+1. Find the information about all teachers alphabetically.
+2. Find the information about all teachers of the computer department
+3. Find the information about all teachers of computer,IT,and e&TC department
+4. Find the information about all teachers of computer,IT,and E&TC department having
+salary greater than or equal to 10000/-
+6. Find the student information having roll_no = 2 or Sname=xyz
+7. Update the experience of teacher-praveen to 10 years, if the entry is not available in
+database consider the entry as new entry.
+9. Update the department of all the teachers working in IT department to COMP
+10. find the teacher's name and their experience from teachers’ collection
+11. Delete all the documents from teacher's collection having IT dept.
+12. display with pretty() method, the first 3 documents in teacher's collection in ascending
+order.
+
+
+Code & Commands :
+
+sudo systemctl start mongodb
+
+sudo systemctl enable mongodb
+
+sudo systemctl status mongodb
+
+mongo
+
+use ass4;
+
+db.Teachers.insertMany([
+  { Tname: "SSS", dno: 4, dname: "CS", experience: 13, salary: 35000, date_of_joining: ISODate("2020-06-23") },
+  { Tname: "VK", dno: 5, dname: "IT", experience: 10, salary: 25000, date_of_joining: ISODate("2018-05-12") },
+  { Tname: "JB", dno: 6, dname: "ENTC", experience: 2, salary: 9000, date_of_joining: ISODate("2022-04-22") },
+  { Tname: "XYZ", dno: 5, dname: "IT", experience: 11, salary: 15000, date_of_joining: ISODate("2015-06-23") },
+  { Tname: "PQR", dno: 4, dname: "CS", experience: 8, salary: 5000, date_of_joining: ISODate("2012-09-07") }
+]);
+
+db.Teachers.find();
+
+db.Students.insertMany([
+  { Sname: "ABCD", rollno: 5, class: 9 },
+  { Sname: "PQRS", rollno: 2, class: 10 },
+  { Sname: "Rahul", rollno: 12, class: 9 }
+]);
+
+db.Teachers.find().sort({ Tname: 1 });
+
+db.Teachers.find({ dname: "CS" });
+
+db.Teachers.find({ dname: { $in: ["CS", "IT", "ENTC"] } });
+
+db.Teachers.find({ dname: { $in: ["CS", "IT", "ENTC"] }, salary: { $gte: 10000 } });
+
+db.Students.find({ $or: [{ Sname: "PQRS" }, { rollno: 2 }] });
+
+db.Teachers.updateOne(
+  { Tname: "Praveen" },
+  { $set: { experience: 10 } },
+  { upsert: true }
+);
+
+db.Teachers.updateMany(
+  { dname: "IT" },
+  { $set: { dname: "CS" } }
+);
+
+db.Teachers.find({}, { Tname: 1, experience: 1, _id: 0 });
+
+db.Teachers.deleteMany({ dname: "IT" });

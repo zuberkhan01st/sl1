@@ -1,0 +1,126 @@
+Problem Statement:-1
+Account(Acc_no, branch_name,balance)
+branch(branch_name,branch_city,assets_amt)
+customer(cust_name,cust_street,cust_city)
+Depositor(cust_name,acc_no)
+Loan(Acc_no,loan_no,branch_name,amount)
+Borrower(cust_name,loan_no)
+Solve following query:
+1. Create above tables with appropriate constraints like primary key, foreign key,
+check constrains, not null etc.
+2. Find the names of all branches in loan relation.
+3. Find all loan numbers for loans made at Pimpri Branch with loan amount > 12000.
+4. Find all customers who have a loan from bank. Find their names, loan_no and loan
+amount.
+5. List all customers in alphabetical order who have loan from Akurdi branch.
+6. Find all customers who have an account or loan or both at bank.
+7. Find all customers who have both account and loan at bank.
+8. Find average account balance at Pimpri branch.
+9. Find the average account balance at each branch
+10. Find the branches where average account balance > 12000.
+11. Calculate total loan amount given by bank.
+
+
+Code & Commands:
+
+sudo mysql
+CREATE DATABASE bank_system;
+USE bank_system;
+CREATE TABLE branch (
+    branch_name VARCHAR(50) PRIMARY KEY,
+    branch_city VARCHAR(50) NOT NULL,
+    assets_amt DECIMAL(15, 2) CHECK (assets_amt >= 0)
+);
+CREATE TABLE Account (
+    acc_no INT PRIMARY KEY,
+    branch_name VARCHAR(50) NOT NULL,
+    balance DECIMAL(15, 2) CHECK (balance >= 0),
+    FOREIGN KEY (branch_name) REFERENCES branch(branch_name) ON DELETE CASCADE
+);
+CREATE TABLE customer (
+    cust_name VARCHAR(100) PRIMARY KEY,
+    cust_street VARCHAR(100) NOT NULL,
+    cust_city VARCHAR(50) NOT NULL
+);
+CREATE TABLE Depositor (
+    cust_name VARCHAR(100),
+    acc_no INT,
+    PRIMARY KEY (cust_name, acc_no),
+    FOREIGN KEY (cust_name) REFERENCES customer(cust_name) ON DELETE CASCADE,
+    FOREIGN KEY (acc_no) REFERENCES Account(acc_no) ON DELETE CASCADE
+);
+
+CREATE TABLE Loan (
+    loan_no INT PRIMARY KEY,
+    acc_no INT NOT NULL,
+    branch_name VARCHAR(50) NOT NULL,
+    amount DECIMAL(15, 2) CHECK (amount >= 0),
+    FOREIGN KEY (acc_no) REFERENCES Account(acc_no) ON DELETE CASCADE,
+    FOREIGN KEY (branch_name) REFERENCES branch(branch_name) ON DELETE CASCADE
+);
+
+
+CREATE TABLE Borrower (
+    cust_name VARCHAR(100),
+    loan_no INT,
+    PRIMARY KEY (cust_name, loan_no),
+    FOREIGN KEY (cust_name) REFERENCES customer(cust_name) ON DELETE CASCADE,
+    FOREIGN KEY (loan_no) REFERENCES Loan(loan_no) ON DELETE CASCADE
+);
+
+INSERT INTO branch (branch_name, branch_city, assets_amt) VALUES
+('Pimpri', 'Pimpri City', 2000000),
+('Akurdi', 'Akurdi City', 1500000),
+('Chinchwad', 'Chinchwad City', 1000000);
+
+INSERT INTO customer (cust_name, cust_street, cust_city) VALUES
+('John Doe', '123 Main St', 'Pimpri City'),
+('Jane Smith', '456 Elm St', 'Akurdi City'),
+('Alice Brown', '789 Oak St', 'Chinchwad City');
+
+
+INSERT INTO Account (acc_no, branch_name, balance) VALUES
+(101, 'Pimpri', 15000),
+(102, 'Akurdi', 20000),
+(103, 'Chinchwad', 10000);
+
+INSERT INTO Depositor (cust_name, acc_no) VALUES
+('John Doe', 101),
+('Jane Smith', 102),
+('Alice Brown', 103);
+
+INSERT INTO Loan (loan_no, acc_no, branch_name, amount) VALUES
+(201, 101, 'Pimpri', 10000),
+(202, 102, 'Akurdi', 15000),
+(203, 103, 'Chinchwad', 5000);
+
+INSERT INTO Borrower (cust_name, loan_no) VALUES
+('John Doe', 201),
+('Jane Smith', 202),
+('Alice Brown', 203);
+
+SELECT DISTINCT branch_name
+FROM Loan;
+
+SELECT loan_no FROM Loan WHERE branch_name = 'Pimpri' AND amount > 12000;
+
+SELECT c.cust_name, l.loan_no, l.amount FROM customer c JOIN Borrower b ON c.cust_name = b.cust_name JOIN Loan l ON b.loan_no = l.loan_no;
+
+SELECT c.cust_name FROM customer c JOIN Borrower b ON c.cust_name = b.cust_name JOIN Loan l ON b.loan_no = l.loan_no WHERE l.branch_name = 'Akurdi' ORDER BY c.cust_name;
+
+SELECT DISTINCT c.cust_name FROM customer c LEFT JOIN Depositor d ON c.cust_name = d.cust_name
+LEFT JOIN Borrower b ON c.cust_name = b.cust_name WHERE d.acc_no IS NOT NULL OR b.loan_no IS NOT NULL;
+
+SELECT DISTINCT c.cust_name FROM customer c JOIN Depositor d ON c.cust_name = d.cust_name
+JOIN Borrower b ON c.cust_name = b.cust_name;
+
+SELECT AVG(a.balance) AS avg_balance FROM Account a JOIN branch b ON a.branch_name = b.branch_name
+WHERE b.branch_name = 'Pimpri';
+
+
+SELECT a.branch_name, AVG(a.balance) AS avg_balance FROM Account a GROUP BY a.branch_name;
+
+SELECT a.branch_name FROM Account a GROUP BY a.branch_name HAVING AVG(a.balance) > 12000;
+
+SELECT SUM(amount) AS total_loan_amount FROM Loan;
+

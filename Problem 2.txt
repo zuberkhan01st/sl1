@@ -1,0 +1,130 @@
+Problem Statement:-2
+1. Write a Stored Procedure namely proc_Grade for the categorization of student. If marks
+scored by students in examination is <=1500 and marks>=990 then student will be placed
+in distinction category if marks scored are between 989 and 900 category is first class, if
+marks 899 and 825 category is Higher Second Class
+Write a PL/SQL block for using procedure created with above requirement.
+Stud_Marks(name, total_marks)
+Result(Roll,Name, Class)
+
+Code & Commands:
+
+sudo mysql
+CREATE DATABASE student_grades;
+USE student_grades;
+CREATE TABLE Stud_Marks (
+    name VARCHAR(100) PRIMARY KEY,
+    total_marks INT NOT NULL
+);
+
+CREATE TABLE Result (
+    roll INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100),
+    class VARCHAR(50),
+    FOREIGN KEY (name) REFERENCES Stud_Marks(name) ON DELETE CASCADE
+);
+
+DELIMITER $$
+
+CREATE PROCEDURE proc_Grade(IN p_name VARCHAR(100), IN p_marks INT)
+BEGIN
+    DECLARE v_class VARCHAR(50);
+
+    -- Categorize based on marks
+    IF p_marks >= 990 AND p_marks <= 1500 THEN
+        SET v_class = 'Distinction';
+    ELSEIF p_marks >= 900 AND p_marks <= 989 THEN
+        SET v_class = 'First Class';
+    ELSEIF p_marks >= 825 AND p_marks <= 899 THEN
+        SET v_class = 'Higher Second Class';
+    ELSE
+        SET v_class = 'Not Categorized';  -- For marks less than 825
+    END IF;
+
+    -- Insert into Result table
+    INSERT INTO Result(name, class) VALUES (p_name, v_class);
+END $$
+
+DELIMITER ;
+
+
+INSERT INTO Stud_Marks (name, total_marks) VALUES
+('John Doe', 1450),
+('Jane Smith', 950),
+('Alice Brown', 880),
+('Bob White', 800);
+
+
+-- Call the procedure for each student
+
+CALL proc_Grade('John Doe', 1450);  -- John has Distinction
+CALL proc_Grade('Jane Smith', 950);  -- Jane has First Class
+CALL proc_Grade('Alice Brown', 880);  -- Alice has Higher Second Class
+CALL proc_Grade('Bob White', 800);  -- Bob is not categorized
+
+SELECT * FROM Result;
+
+
+-- Step 1: Create the database
+CREATE DATABASE student_grades;
+
+-- Step 2: Use the database
+USE student_grades;
+
+-- Step 3: Create the Stud_Marks table
+CREATE TABLE Stud_Marks (
+    name VARCHAR(100) PRIMARY KEY,
+    total_marks INT NOT NULL
+);
+
+-- Step 4: Create the Result table
+CREATE TABLE Result (
+    roll INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100),
+    class VARCHAR(50),
+    FOREIGN KEY (name) REFERENCES Stud_Marks(name) ON DELETE CASCADE
+);
+
+-- Step 5: Create the stored procedure
+DELIMITER $$
+
+CREATE PROCEDURE proc_Grade(IN p_name VARCHAR(100), IN p_marks INT)
+BEGIN
+    DECLARE v_class VARCHAR(50);
+
+    -- Categorize based on marks
+    IF p_marks >= 990 AND p_marks <= 1500 THEN
+        SET v_class = 'Distinction';
+    ELSEIF p_marks >= 900 AND p_marks <= 989 THEN
+        SET v_class = 'First Class';
+    ELSEIF p_marks >= 825 AND p_marks <= 899 THEN
+        SET v_class = 'Higher Second Class';
+    ELSE
+        SET v_class = 'Not Categorized';  -- For marks less than 825
+    END IF;
+
+    -- Insert into Result table
+    INSERT INTO Result(name, class) VALUES (p_name, v_class);
+END $$
+
+DELIMITER ;
+
+-- Step 6: Insert student data into Stud_Marks table
+INSERT INTO Stud_Marks (name, total_marks) VALUES
+('John Doe', 1450),
+('Jane Smith', 950),
+('Alice Brown', 880),
+('Bob White', 800);
+
+-- Step 7: Call the procedure to categorize students
+CALL proc_Grade('John Doe', 1450);  -- John has Distinction
+CALL proc_Grade('Jane Smith', 950);  -- Jane has First Class
+CALL proc_Grade('Alice Brown', 880);  -- Alice has Higher Second Class
+CALL proc_Grade('Bob White', 800);  -- Bob is not categorized
+
+-- Step 8: Verify the results in the Result table
+SELECT * FROM Result;
+
+
+
+

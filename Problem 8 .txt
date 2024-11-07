@@ -1,0 +1,104 @@
+Problem Statement: -8
+Develop a student database to efficiently manage and retrieve student records (Student id,
+Student Name, Class, address, grades, and enrolment details, subject name, attendance.
+● Create Views to provide summarized insights into student performance and
+attendance. (Consider the attributes which shows attendance of students while
+creating view)
+● Create Sequences to generate unique student IDs.
+● Create an index on a table using student name
+
+Code & Commands :
+
+sudo mysql
+
+CREATE DATABASE StudentDB;
+USE StudentDB;
+
+CREATE TABLE Students (
+    student_id INT PRIMARY KEY,
+    student_name VARCHAR(100),
+    class VARCHAR(20),
+    address TEXT,
+    grades VARCHAR(10)
+);
+
+
+CREATE TABLE Subjects (
+    subject_id INT PRIMARY KEY AUTO_INCREMENT,
+    subject_name VARCHAR(100)
+);
+
+
+CREATE TABLE Enrollments (
+    enrollment_id INT PRIMARY KEY AUTO_INCREMENT,
+    student_id INT,
+    subject_id INT,
+    enrollment_date DATE,
+    FOREIGN KEY (student_id) REFERENCES Students(student_id),
+    FOREIGN KEY (subject_id) REFERENCES Subjects(subject_id)
+);
+
+
+CREATE TABLE Attendance (
+    attendance_id INT PRIMARY KEY AUTO_INCREMENT,
+    student_id INT,
+    subject_id INT,
+    attendance_date DATE,
+    status ENUM('Present', 'Absent', 'Excused') NOT NULL,
+    FOREIGN KEY (student_id) REFERENCES Students(student_id),
+    FOREIGN KEY (subject_id) REFERENCES Subjects(subject_id)
+);
+
+
+INSERT INTO Students (student_id, student_name, class, address, grades)
+VALUES
+(1, 'John Doe', '10th Grade', '1234 Elm St', 'A'),
+(2, 'Jane Smith', '10th Grade', '5678 Oak Ave', 'B'),
+(3, 'Alice Brown', '12th Grade', '9101 Pine Rd', 'A');
+
+
+INSERT INTO Subjects (subject_name)
+VALUES
+('Mathematics'),
+('Science'),
+('History');
+
+
+INSERT INTO Enrollments (student_id, subject_id, enrollment_date)
+VALUES
+(1, 1, '2024-08-15'),
+(1, 2, '2024-08-15'),
+(2, 2, '2024-08-15'),
+(3, 3, '2024-08-15');
+
+
+INSERT INTO Attendance (student_id, subject_id, attendance_date, status)
+VALUES
+(1, 1, '2024-08-16', 'Present'),
+(1, 2, '2024-08-16', 'Absent'),
+(2, 2, '2024-08-16', 'Present'),
+(3, 3, '2024-08-16', 'Present');
+
+
+CREATE VIEW student_performance AS
+SELECT s.student_name, sub.subject_name, s.grades
+FROM Students s
+JOIN Enrollments e ON s.student_id = e.student_id
+JOIN Subjects sub ON e.subject_id = sub.subject_id;
+
+
+CREATE VIEW student_attendance AS
+SELECT s.student_name, sub.subject_name, a.attendance_date, a.status
+FROM Students s
+JOIN Attendance a ON s.student_id = a.student_id
+JOIN Subjects sub ON a.subject_id = sub.subject_id;
+
+
+CREATE INDEX idx_student_name ON Students(student_name);
+
+
+SELECT * FROM student_performance;
+
+
+SELECT * FROM student_attendance;
+

@@ -1,0 +1,90 @@
+Write a PL/SQL block of code using parameterized Cursor that will merge the data available
+in the newly created table N_Roll_Call with the data available in the table O_Roll_Call. If the
+data in the first table already exists in the second table then that data should be skipped
+
+Code & Commands :
+ sudo mysql
+ 
+ CREATE DATABASE roll_call_db;
+USE roll_call_db;
+
+CREATE TABLE N_Roll_Call (
+    student_id INT PRIMARY KEY,
+    student_name VARCHAR(100),
+    subject VARCHAR(100)
+);
+
+CREATE TABLE O_Roll_Call (
+    student_id INT PRIMARY KEY,
+    student_name VARCHAR(100),
+    subject VARCHAR(100)
+);
+
+
+INSERT INTO N_Roll_Call (student_id, student_name, subject) VALUES
+(1, 'John Doe', 'Math'),
+(2, 'Jane Smith', 'Physics'),
+(3, 'Alice Brown', 'Chemistry'),
+(4, 'Bob White', 'History');
+
+
+INSERT INTO O_Roll_Call (student_id, student_name, subject) VALUES
+(1, 'John Doe', 'Math'),
+(2, 'Jane Smith', 'Physics');
+
+
+DELIMITER $$
+
+CREATE PROCEDURE merge_roll_calls()
+BEGIN
+    -- Declare variables for the cursor
+    DECLARE done INT DEFAULT 0;
+    DECLARE v_student_id INT;
+    DECLARE v_student_name VARCHAR(100);
+    DECLARE v_subject VARCHAR(100);
+    
+    -- Declare the cursor to fetch new roll call data
+    DECLARE cur CURSOR FOR
+        SELECT student_id, student_name, subject
+        FROM N_Roll_Call;
+    
+    -- Declare the handler to exit when the cursor reaches the end
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+    
+    -- Open the cursor
+    OPEN cur;
+    
+    -- Start the loop to fetch data from the cursor
+    read_loop: LOOP
+        -- Fetch the data from the cursor into variables
+        FETCH cur INTO v_student_id, v_student_name, v_subject;
+        
+        -- If the cursor has finished fetching data, exit the loop
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+        
+        -- Check if the student ID already exists in O_Roll_Call
+        IF NOT EXISTS (SELECT 1 FROM O_Roll_Call WHERE student_id = v_student_id) THEN
+            -- If not exists, insert the new record into O_Roll_Call
+            INSERT INTO O_Roll_Call (student_id, student_name, subject)
+            VALUES (v_student_id, v_student_name, v_subject);
+            SELECT CONCAT('Inserted: ', v_student_name) AS status;
+        ELSE
+            -- If exists, skip the record
+            SELECT CONCAT('Skipped: ', v_student_name) AS status;
+        END IF;
+        
+    END LOOP;
+    
+    -- Close the cursor
+    CLOSE cur;
+END$$
+
+DELIMITER ;
+
+
+CALL merge_roll_calls();
+
+SELECT * FROM O_Roll_Call;
+
